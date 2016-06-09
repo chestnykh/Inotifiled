@@ -13,16 +13,51 @@
 
 
 typedef unsigned int uint;
+//weljbfewfnwflenew
 
 
-#define Ntf 2
 
+#ifndef REPORT_ACTION
+#define REPORT_ACTION(mask, log) { \
+	if(mask & IN_ACCESS){ \
+		fprintf(log, "READ action has happened\n");\
+	}\
+	if(mask & IN_MODIFY){ \
+		fprintf(log, "WRITE action has happened\n");\
+	}\
+	if(mask & IN_ATTRIB){ \
+		fprintf(log, "Metadata has changed\n");\
+	}\
+	if(mask & IN_CLOSE_WRITE){ \
+		fprintf(log, "FIle had been closed before it has opened to write\n");\
+	}\
+	if(mask & IN_CLOSE_NOWRITE){ \
+		fprintf(log, "FIle has closed before it had been opened to write\n");\
+	}\
+	if(mask & IN_OPEN){ \
+		fprintf(log, "OPEN action has happened\n");\
+	}\
+	if(mask & IN_MOVED_FROM){ \
+		fprintf(log, "File has moved from the tracking directory\n");\
+	}\
+	if(mask & IN_MOVED_TO){ \
+		fprintf(log, "File has moved to the tracking directory\n");\
+	}\
+	if(mask & IN_CREATE){ \
+		fprintf(log, "File has created in the tracking directory\n");\
+	}\
+	if(mask & IN_DELETE){ \
+		fprintf(log, "File has deleted in the tracking directory\n");\
+	}\
+	if(mask & IN_MOVE_SELF){ \
+		fprintf(log, "File has moved itself\n");\
+	}\
+	if(mask & IN_DELETE_SELF){ \
+		fprintf(log, "File has deleted itself\n");\
+	}\
+} 
+#endif
 
-/*
-#ifndef REPORT_ACTION(mask, log) { \
-	if(mask & )
-}
-*/
 
 
 
@@ -31,17 +66,11 @@ uint inotify_max_inst;
 uint inotify_max_watches;
 
 int *inotify_fds;
-int *inotify_fds_entry;
-
-
 uint32_t *inotify_wds;
-uint32_t *inotify_wds_entry;
 
 FILE *core_log;
-FILE *log_streams[Ntf];
 
-
-struct pollfd fds[Ntf];
+struct pollfd *fds;
 
 struct inotify_event *ievents;
 

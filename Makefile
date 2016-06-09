@@ -1,19 +1,20 @@
 CC = gcc
-CCFLAGS = -c -O2 -DLINUX -march=native -mtune=generic -DLINUX -ggdb3 -Wattributes -Wall -I include
+CCFLAGS = -c -O2 -DLINUX -march=native -mtune=generic -DLINUX \
+	  -Wattributes -Wall -Wpedantic -Wextra -I include -ggdb3 # -std=c99
 TARGET = ifiled
 
 OBJS += main.o \
    	parse.o \
    	handle_events.o \
-	create_daemon.o \
+	daemon.o \
 	util.o
 
 
-.PHONY: run clean
+.PHONY: run clean test
+
 
 run: $(TARGET)
-	cd const_pollfd; make;
-	./$(TARGET)
+	./$(TARGET);
 
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $@
@@ -27,7 +28,7 @@ parse.o: parse.c include/parse.h
 handle_events.o: handle_events.c include/handle_events.h
 	$(CC) $(CCFLAGS) $<
 
-create_daemon.o: create_daemon.c include/create_daemon.h
+daemon.o: daemon.c include/daemon.h
 	$(CC) $(CCFLAGS) $<
 
 util.o: util.c include/util.h

@@ -14,33 +14,21 @@ int parse_config_file(const char *path)
 		return -1;
 	}
 
-	FILE *npfd = fopen("npollfd.data", "r");
-	int get;
-	char pdata[10];
-	memset(pdata, 0, 10);
-	for(size_t i=0; (get = fgetc(npfd)) != EOF; i++){
-		pdata[i] = (char)get;
-	}
-	ntf = atoi(pdata); 
-	//unstrcat(start_wd, strlen("/npollfd.data"));
+	ntf = count_strings(conf)/3;
 	/*тут мы должны подготовить таблицу файл -> события*/
 	/*так как далее ее будем заполнять*/
+	int current_tf_struct = 0;
 	prepare_tf_structures();
-	/*
-	printf("ev0 = %d\n", tracked_files -> events);
-	tf_tonext();
-	printf("ev1 = %d\n", tracked_files -> events);
-	tf_tostart();
-	printf("ev0 = %d\n", tracked_files -> events);
-	*/
-
-	TF_TOSTART();
 	int icurr = 1; /*current symbol*/
 	int pos = 0; /*string position*/
 	int not_graph = 0; /*separator counter*/
-	char *str = (char *)malloc(LINE_MAX);
+	char *str = malloc(LINE_MAX);
 	int strings_in_conf = 0;
 	while(icurr != EOF){
+		if(current_tf_struct > ntf){
+			fprintf(core_log, "Unable to parse config file \"%s\" correctly!\n", path);
+			return 1;
+		}
 		/*current string*/
 		pos = 0;
 		not_graph = 0;
@@ -63,11 +51,14 @@ int parse_config_file(const char *path)
 		to_next_valid_symbol(&str);
 		if(define_file_string(strings_in_conf) == 1){
 			/*тут формируется (одна из стадий) таблица файл - события*/
-			handle_file_string(str);
+			handle_file_string(str, current_tf_struct);
 		}
-		else if(define_file_string(strings_in_conf) == 2) handle_event_string(str);
+		else if(define_file_string(strings_in_conf) == 2){
+			handle_event_string(str, current_tf_struct);
+		}
 		else{
-			handle_log_string(str);
+			handle_log_string(str,current_tf_struct);
+			current_tf_struct++;
 
 		}
 		CLEAR_STR(str,pos);
@@ -81,12 +72,12 @@ int parse_config_file(const char *path)
 
 int prepare_tf_structures()
 {
-	tracked_files = (struct inotify_tracked*)malloc(ntf * sizeof(struct inotify_tracked));
+	tracked_files = calloc(ntf , sizeof(struct inotify_tracked));
 	if(!tracked_files){
 		LOG_ERR();
 		return -1;
 	}
-	inotify_tracked_entry = tracked_files;
+	//inotify_tracked_entry = tracked_files;
 	initialize_tracked_files_list();
 	return 0;
 }
@@ -95,10 +86,9 @@ int prepare_tf_structures()
 
 void initialize_tracked_files_list()
 {
-	//we initialize events fields in all structures by zero
-	FOR_EACH_TF(){
-		tracked_files -> events = 0;
-		TF_TONEXT();
+	/*we initialize events fields in all structures by zero*/
+	for(size_t i=0; i<ntf; i++){
+		tracked_files[i].events = 0;
 	}
 }
 
@@ -136,7 +126,7 @@ int define_file_string(int strcnt)
 	return 0;
 }
 
-int handle_file_string(char *str)
+int handle_file_string(char *str, int curr_tf_struct)
 {
 	to_next_valid_symbol(&str);
 	if(!compare_strings(str,"file", 4) && !compare_strings(str,"File",4)){
@@ -161,10 +151,10 @@ int handle_file_string(char *str)
 	while(*str++ != '\0') path_size++;
 	str = temp;
 	
-	char *path = (char *)malloc(path_size);
+	char *path = malloc(path_size);
 	/*подготовим в соответсвующей структуре место для пути*/
-	tracked_files -> path = (char *)malloc(path_size);
-	if(tracked_files -> path == NULL){
+	tracked_files[curr_tf_struct].path = malloc(path_size);
+	if(!tracked_files[curr_tf_struct].path){
 		LOG_ERR();
 		return -1;
 	}
@@ -176,16 +166,16 @@ int handle_file_string(char *str)
 	}
 	*path = '\0';
 	path -= path_size;
-	if(strlen(tracked_files -> path) > PATH_MAX){
+	if(strlen(tracked_files[curr_tf_struct].path) > PATH_MAX){
 		fprintf(stderr, "Too big path to file\n");
 		return -1;
 	}
-	tracked_files -> path = path;
+	tracked_files[curr_tf_struct].path = path;
 	return 0;
 }
 
 
-int handle_event_string(char *str)
+int handle_event_string(char *str, int curr_tf_struct)
 {
 	to_next_valid_symbol(&str);
 	if(!compare_strings(str,"events",6)){
@@ -204,64 +194,64 @@ int handle_event_string(char *str)
 	}
 	str++;
 	to_next_valid_symbol(&str);
-	char *event = (char *)malloc(30); /*30 хватит*/
+	char *event = malloc(30); /*30 хватит*/
 	size_t ch = 0;
 	while(*str != '\n' && *str != '\0' && (int)(*str) != EOF){
 		ch = 0;
 		while(*str != ',' && *str != '\0' && *str != '\n' && (int)(*str) != EOF){
+			if(!ch) to_next_valid_symbol(&str);
 			*event++ = *str++;
-			//printf("*event = %c\n", *eventu);
 			ch++;
 		}
 		event[ch] = '\0';
 		event -= ch;
 		if(!strcmp(event,"write")){
-			tracked_files -> events |= IN_MODIFY;
+			tracked_files[curr_tf_struct].events |= IN_MODIFY;
 		}
 		if(!strcmp(event,"read")){
-			tracked_files -> events |= IN_ACCESS;
+			tracked_files[curr_tf_struct].events |= IN_ACCESS;
 		}
 		if(!strcmp(event,"open")){
-			tracked_files -> events |= IN_OPEN;
+			tracked_files[curr_tf_struct].events |= IN_OPEN;
 		}
 		if(!strcmp(event,"delete")){
-			tracked_files -> events |= IN_DELETE;
+			tracked_files[curr_tf_struct].events |= IN_DELETE;
 		}
 		if(!strcmp(event,"metadata")){
-			tracked_files -> events |= IN_ATTRIB;
+			tracked_files[curr_tf_struct].events |= IN_ATTRIB;
 		}
 		if(!strcmp(event,"all")){
-			tracked_files -> events |= IN_ALL_EVENTS;
+			tracked_files[curr_tf_struct].events |= IN_ALL_EVENTS;
 		}
 		if(!strcmp(event,"change metadata")){
-			tracked_files -> events |= IN_ATTRIB;
+			tracked_files[curr_tf_struct].events |= IN_ATTRIB;
 		}
 		if(!strcmp(event,"close write")){
-			tracked_files -> events |= IN_CLOSE_WRITE;
+			tracked_files[curr_tf_struct].events |= IN_CLOSE_WRITE;
 		}
 		if(!strcmp(event,"close nowrite")){
-			tracked_files -> events |= IN_CLOSE_NOWRITE;
+			tracked_files[curr_tf_struct].events |= IN_CLOSE_NOWRITE;
 		}
 		if(!strcmp(event,"move from")){
-			tracked_files -> events |= IN_MOVED_FROM;
+			tracked_files[curr_tf_struct].events |= IN_MOVED_FROM;
 		}
 		if(!strcmp(event,"move to")){
-			tracked_files -> events |= IN_MOVED_TO;
+			tracked_files[curr_tf_struct].events |= IN_MOVED_TO;
 		}
 		if(!strcmp(event,"create")){
-			tracked_files -> events |= IN_CREATE;
+			tracked_files[curr_tf_struct].events |= IN_CREATE;
 		}
 		if(!strcmp(event,"all close")){
-			tracked_files -> events |= IN_ALL_EVENTS;
+			tracked_files[curr_tf_struct].events |= IN_ALL_EVENTS;
 		}
 		if(!strcmp(event,"all move")){
-			tracked_files -> events |= IN_MOVE;
+			tracked_files[curr_tf_struct].events |= IN_MOVE;
 		}
 		if(!strcmp(event,"delete self")){
-			tracked_files -> events |= IN_DELETE_SELF;
+			tracked_files[curr_tf_struct].events |= IN_DELETE_SELF;
 		}
 		if(!strcmp(event,"move self")){
-			tracked_files -> events |= IN_MOVE_SELF;
+			tracked_files[curr_tf_struct].events |= IN_MOVE_SELF;
 		}
 		CLEAR_STR(event,ch);
 		str++;	
@@ -271,7 +261,7 @@ int handle_event_string(char *str)
 	return 0;
 }
 
-int handle_log_string (char *str)
+int handle_log_string (char *str, int curr_tf_struct)
 {
 	to_next_valid_symbol(&str);
 	if(!compare_strings(str,"logfile",7)){
@@ -289,7 +279,7 @@ int handle_log_string (char *str)
 	size_t log_name_size = 0;
 	while(*str++ != '\0') log_name_size++;
 	str -= (log_name_size+1);
-	char *log = (char *)malloc(log_name_size+1);
+	char *log = malloc(log_name_size+1);
 	if(!log){
 		LOG_ERR();
 		return -1;
@@ -298,12 +288,11 @@ int handle_log_string (char *str)
 		log[i] = *str++;
 	}
 	log[log_name_size] = '\0';
-	tracked_files -> logfile = log;
-	if(strlen(tracked_files -> logfile) > PATH_MAX){
+	tracked_files[curr_tf_struct].logfile = log;
+	if(strlen(tracked_files[curr_tf_struct].logfile) > PATH_MAX){
 		fprintf(stderr, "Too big path to file\n");
 		return -1;
 	}
-	TF_TONEXT();
 	return 0;
 }
 

@@ -1,5 +1,7 @@
-#include <create_daemon.h>
+#include <daemon.h>
 #include <stdio.h>
+#include <handle_events.h>
+#include <parse.h>
 
 int start_daemon()
 {
@@ -32,4 +34,31 @@ int start_daemon()
 		fprintf(core_log, "Failed to close STDERR!\n");	
 	}
 	return 0;
+}
+
+
+
+int register_finish_procedures(){
+	if(atexit(&print_finishtime)) return -1;
+	return 0;
+}
+
+
+void print_starttime()
+{
+	for(int i=0; i<ntf; i++){
+		fprintf(tracked_files[i].log_stream, "Daemon started at:");
+		print_timeinfo(tracked_files[i].log_stream);
+		fprintf(tracked_files[i].log_stream, "\n");
+		fflush(tracked_files[i].log_stream);
+	}
+}
+
+void print_finishtime()
+{
+	for(int i=0; i<ntf; i++){
+		fprintf(tracked_files[i].log_stream, "\nDaemon finished at:");
+		print_timeinfo(tracked_files[i].log_stream);
+		fflush(tracked_files[i].log_stream);
+	}
 }
