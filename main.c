@@ -2,26 +2,37 @@
 #include <handle_events.h>
 #include <sys/wait.h>
 #include <daemon.h>
-#include <util.h>
 
 
-
-char start_wd[PATH_MAX];
 
 
 #define MAIN_CHECK_RETVAL(ret) {\
-	if (ret == -1) return -1; \ 
+	if (ret == -1) return -1;\
 }
 
 
 int main(int argc, char *argv[])
 {
-	int ret;
-	//char cur_wd[PATH_MAX];
-	if(!getcwd(start_wd, PATH_MAX)) return -1;
-
-
-	int clog = open("ifile.log", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	int flag = 0;
+	char *corelog;
+	char *conf;
+	while((flag = getopt(argc, argv, "c:l:")) != -1){
+		switch(flag){
+			case 'c':{
+				conf = optarg;
+				break;
+			}
+			case 'l':{
+				corelog = optarg;
+				break;		
+			}
+			case '?':{
+				fprintf(stderr, "Invalid argument!\n");
+				return -1;
+			}
+		}
+	}
+	int clog = open((const char *)corelog, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if(clog == -1){
 		LOG_ERR();
 		return -1;
@@ -31,10 +42,9 @@ int main(int argc, char *argv[])
 		LOG_ERR();
 		return -1;
 	}
-
-	ret = parse_config_file("watching.conf");
+	int ret;
+	ret = parse_config_file((const char *)conf);
 	MAIN_CHECK_RETVAL(ret);
-	//unstrcat("watching.conf");
 
 	ret = get_inotify_limits();
 	MAIN_CHECK_RETVAL(ret);

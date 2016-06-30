@@ -20,6 +20,7 @@
 	fprintf(core_log, "File \"%s\"\n", __FILE__); \
 	fprintf(core_log, "Function \"%s\"\n", __func__); \
 	fprintf(core_log, "Line %d\n", __LINE__); \
+	fprintf(core_log, "Errno message: "); \
 	fprintf(core_log, "%s\n", strerror(errno)); \
 	fflush(core_log); \
 }
@@ -27,10 +28,10 @@
 
 
 typedef struct inotify_tracked{
-	char *path; /*path to file*/
-	uint32_t events; /*bit mask*/
-	char *logfile; /*log file*/
 	FILE *log_stream;
+	char *path; /*path to file*/
+	char *logfile; /*log file*/
+	uint32_t events; /*bit mask*/
 } inotify_tracked_t;
 
 unsigned int config_strings;

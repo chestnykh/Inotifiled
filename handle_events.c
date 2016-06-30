@@ -121,15 +121,6 @@ void init_pollfd_structures()
 
 
 
-int wait_events()
-{
-	int pollret = poll(fds, (nfds_t)ntf, -1);
-	if(pollret == -1){
-		LOG_ERR();
-		return -1;
-	}
-	return 0;
-}
 
 
 int create_log_streams()
@@ -142,8 +133,6 @@ int create_log_streams()
 			return -1;
 		}
 		tracked_files[i].log_stream = fdopen(fd, "a+");
-		fprintf(tracked_files[i].log_stream, "events = %d\n", tracked_files[i].events);
-		fflush(tracked_files[i].log_stream);
 		if(!tracked_files[i].log_stream){
 			LOG_ERR();
 			return -1;
@@ -165,6 +154,15 @@ int init_event_struct()
 	return 0;
 }
 
+int wait_events()
+{
+	int pollret = poll(fds, (nfds_t)ntf, -1);
+	if(pollret == -1){
+		LOG_ERR();
+		return -1;
+	}
+	return 0;
+}
 
 int handle_events()
 {

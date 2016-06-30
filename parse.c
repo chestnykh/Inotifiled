@@ -1,8 +1,5 @@
 #include <parse.h>
 #include <errno.h>
-#include <util.h>
-
-extern char start_wd[PATH_MAX];
 
 
 
@@ -198,8 +195,8 @@ int handle_event_string(char *str, int curr_tf_struct)
 	size_t ch = 0;
 	while(*str != '\n' && *str != '\0' && (int)(*str) != EOF){
 		ch = 0;
+		to_next_valid_symbol(&str);
 		while(*str != ',' && *str != '\0' && *str != '\n' && (int)(*str) != EOF){
-			if(!ch) to_next_valid_symbol(&str);
 			*event++ = *str++;
 			ch++;
 		}

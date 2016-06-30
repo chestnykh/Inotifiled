@@ -6,15 +6,14 @@ TARGET = ifiled
 OBJS += main.o \
    	parse.o \
    	handle_events.o \
-	daemon.o \
-	util.o
+	daemon.o 
 
 
 .PHONY: run clean test
 
 
 run: $(TARGET)
-	./$(TARGET);
+	./$(TARGET) -c watching.conf -l ifiled.log;
 
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $@
