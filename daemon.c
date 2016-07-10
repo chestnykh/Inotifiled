@@ -2,9 +2,17 @@
 #include <stdio.h>
 #include <handle_events.h>
 #include <parse.h>
+#include <signal.h>
+#include <sched.h>
+#include <core.h>
 
 int start_daemon()
 {
+	/*
+	Надо вызывать clone() с флагом наследования сигнал хэндлеров
+	int ret;
+	ret = clone(&track_files,);
+	*/
 	pid_t daemon_pid = fork();
 	if(daemon_pid == -1){
 		fprintf(core_log, "Failed to start daemon!\n");
@@ -39,8 +47,7 @@ int start_daemon()
 
 
 int register_finish_procedures(){
-	if(atexit(&print_finishtime)) return -1;
-	return 0;
+	return atexit(&print_finishtime);
 }
 
 

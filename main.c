@@ -2,8 +2,9 @@
 #include <handle_events.h>
 #include <sys/wait.h>
 #include <daemon.h>
-
-
+#include <add_watch.h>
+#include <signotify.h>
+#include <core.h>
 
 
 #define MAIN_CHECK_RETVAL(ret) {\
@@ -11,15 +12,40 @@
 }
 
 
+int ret;
+extern int savepid();
+
+
+int track_files(void *nothing)
+{
+	set_sigusr1_handler();
+	print_starttime();
+	savepid();
+	fprintf(core_log, "here\n");
+	fflush(core_log);
+	for(;;){
+		ret = wait_events();
+		MAIN_CHECK_RETVAL(ret);
+		ret = handle_events();
+		MAIN_CHECK_RETVAL(ret);
+	}
+	return -1;
+}
+
 int main(int argc, char *argv[])
 {
+	home_dir = getenv("HOME");
+	if(!home_dir){
+		LOG_ERR();
+		REPORT_ERREXIT();
+		return -1;
+	}
 	int flag = 0;
 	char *corelog;
-	char *conf;
 	while((flag = getopt(argc, argv, "c:l:")) != -1){
 		switch(flag){
 			case 'c':{
-				conf = optarg;
+				config_file = optarg;
 				break;
 			}
 			case 'l':{
@@ -42,8 +68,7 @@ int main(int argc, char *argv[])
 		LOG_ERR();
 		return -1;
 	}
-	int ret;
-	ret = parse_config_file((const char *)conf);
+	ret = parse_config_file((const char *)config_file);
 	MAIN_CHECK_RETVAL(ret);
 
 	ret = get_inotify_limits();
@@ -59,14 +84,25 @@ int main(int argc, char *argv[])
 
 	ret = init_event_struct();
 	MAIN_CHECK_RETVAL(ret);
+
+	//set_sigusr1_handler();
+
+	//track_files();
 	
 	start_daemon();
 	print_starttime();
+	savepid();
+	fprintf(core_log, "here\n");
+	fflush(core_log);
+	set_sigusr1_handler();
 	for(;;){
-		wait_events();
+		ret = wait_events();
 		MAIN_CHECK_RETVAL(ret);
-		handle_events();
+		ret = handle_events();
+		MAIN_CHECK_RETVAL(ret);
 	}
+	
+	/*сюда дойти не должно*/
 	return 0;
 }
 

@@ -13,12 +13,17 @@
 
 
 typedef unsigned int uint;
-//weljbfewfnwflenew
 
 
 
 #ifndef REPORT_ACTION
-#define REPORT_ACTION(mask, log) { \
+#define REPORT_ACTION(mask, log, cookie) { \
+	if(mask & IN_ISDIR){ \
+		fprintf(log, "Tracking object is a directory\n");\
+	}\
+	else{ \
+		fprintf(log, "Tracking object is a file\n"); \
+	} \
 	if(mask & IN_ACCESS){ \
 		fprintf(log, "READ action has happened\n");\
 	}\
@@ -55,6 +60,12 @@ typedef unsigned int uint;
 	if(mask & IN_DELETE_SELF){ \
 		fprintf(log, "File has deleted itself\n");\
 	}\
+	if(mask & IN_IGNORED){ \
+		fprintf(log, "IN_IGNORED event.\n");\
+	}\
+	if(mask & IN_UNMOUNT){ \
+		fprintf(log, "Device which contains the tracking object has unmounted!\n");\
+	}\
 } 
 #endif
 
@@ -68,7 +79,6 @@ uint inotify_max_watches;
 int *inotify_fds;
 uint32_t *inotify_wds;
 
-FILE *core_log;
 
 struct pollfd *fds;
 

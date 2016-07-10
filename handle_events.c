@@ -21,12 +21,14 @@ int get_inotify_limits()
 	FILE *f = fopen("/proc/sys/fs/inotify/max_user_instances", "r");
 	if(!f){
 		LOG_ERR(); /*добавить __FILE__ __LINE__ ?*/
+		REPORT_ERREXIT();
 		return -1;
 	}
 
 	char *buf = malloc(20);
 	if(buf == NULL){
 		LOG_ERR();
+		REPORT_ERREXIT();
 		return -1;
 	}
 	int curr = 1;
@@ -51,6 +53,7 @@ int get_inotify_limits()
 	f = fopen("/proc/sys/fs/inotify/max_user_watches", "r");
 	if(!f){
 		LOG_ERR();
+		REPORT_ERREXIT();
 		return -1;
 	}
 	digits = 0;
@@ -86,11 +89,13 @@ int init_inotify_actions()
 	inotify_fds = calloc(ntf,sizeof(int));
 	if(!inotify_fds){
 		LOG_ERR();
+		REPORT_ERREXIT();
 		return -1;
 	}
 	inotify_wds = calloc(ntf, sizeof(uint32_t));
 	if(!inotify_wds){
 		LOG_ERR();
+		REPORT_ERREXIT();
 		return -1;
 	}
 	
@@ -98,11 +103,13 @@ int init_inotify_actions()
 		inotify_fds[i] = inotify_init1(0);
 		if(inotify_fds[i] == -1){
 			LOG_ERR();
+			REPORT_ERREXIT();
 			return -1;
 		}
 		inotify_wds[i] = inotify_add_watch(inotify_fds[i], tracked_files[i].path, tracked_files[i].events);
 		if(inotify_wds[i] == -1){
 			LOG_ERR();
+			REPORT_ERREXIT();
 			return -1;
 		}
 	}
@@ -130,11 +137,13 @@ int create_log_streams()
 		fd = open(tracked_files[i].logfile, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 		if(fd == -1){
 			LOG_ERR();
+			REPORT_ERREXIT();
 			return -1;
 		}
 		tracked_files[i].log_stream = fdopen(fd, "a+");
 		if(!tracked_files[i].log_stream){
 			LOG_ERR();
+			REPORT_ERREXIT();
 			return -1;
 		}
 	}
@@ -149,6 +158,7 @@ int init_event_struct()
 	ievents = malloc(sizeof(struct inotify_event));
 	if(!ievents){
 		LOG_ERR();
+		REPORT_ERREXIT();
 		return -1;
 	}
 	return 0;
@@ -156,9 +166,16 @@ int init_event_struct()
 
 int wait_events()
 {
-	int pollret = poll(fds, (nfds_t)ntf, -1);
+	int pollret;
+	do {
+		pollret = poll(fds, (nfds_t)ntf, -1);
+		//if(errno == EINTR) puts("EINTR!!!");
+	} while (pollret == -1 && errno == EINTR);
+	fprintf(core_log, "pollret = %d\n", pollret);
+	fflush(core_log);
 	if(pollret == -1){
 		LOG_ERR();
+		REPORT_ERREXIT();
 		return -1;
 	}
 	return 0;
@@ -175,6 +192,7 @@ int handle_events()
 			rread = read(fds[j].fd, buf, BUFSIZE);
 			if(rread == -1){
 				LOG_ERR();
+				REPORT_ERREXIT();
 				return -1;
 			}
 			i=0;
@@ -182,8 +200,9 @@ int handle_events()
 				fprintf(tracked_files[j].log_stream, "##########\n");
 				print_timeinfo(tracked_files[j].log_stream);
 				ievents = (struct inotify_event *)&buf[i];
-				REPORT_ACTION(ievents -> mask , tracked_files[j].log_stream);
-				if(ievents->len != 0) fprintf(tracked_files[j].log_stream, "name = %s\n", ievents->name);
+				REPORT_ACTION(ievents -> mask , tracked_files[j].log_stream, ievents->cookie);
+				if(ievents->len) fprintf(tracked_files[j].log_stream, "name = %s\n", ievents->name);
+				if(ievents->cookie) fprintf(tracked_files[j].log_stream, "cookie = %u\n", ievents->cookie);
 				fflush(tracked_files[j].log_stream);
 				i+=sizeof(struct inotify_event) + ievents -> len;
 			}	

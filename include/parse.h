@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <handle_events.h>
 #include <errno.h>
+#include <core.h>
 
 #include <sys/inotify.h>
 
@@ -15,16 +16,28 @@
 
 
 
+#ifndef LOG_ERR
+
 #define LOG_ERR() { \
 	fprintf(core_log, "ERROR:\n"); \
 	fprintf(core_log, "File \"%s\"\n", __FILE__); \
 	fprintf(core_log, "Function \"%s\"\n", __func__); \
-	fprintf(core_log, "Line %d\n", __LINE__); \
+	fprintf(core_log, "Line %d\n", __LINE__-1); \
 	fprintf(core_log, "Errno message: "); \
 	fprintf(core_log, "%s\n", strerror(errno)); \
 	fflush(core_log); \
 }
 
+#endif
+
+#ifndef REPORT_EXIT
+
+#define REPORT_ERREXIT() { \
+	fprintf(core_log, "Program exited due to error\n"); \
+	fflush(core_log); \
+} 
+
+#endif
 
 
 typedef struct inotify_tracked{
@@ -49,7 +62,7 @@ void initialize_tracked_files_list();
 
 #ifndef CLEAR_STR
 #define CLEAR_STR(str,pos) { \
-	for(size_t i=0; i<pos-1; i++){ \
+	for(size_t i=0; i<pos; i++){ \
 		*str++ = '\0'; \
 	} \
 }
@@ -59,7 +72,7 @@ int parse_config_file(const char *path);
 
 bool compare_strings(char *s1, char *s2, size_t len);
 
-__attribute__((always_inline)) void to_next_valid_symbol(char **str);
+void to_next_valid_symbol(char **str);
 
 bool unused_string(int pos, int not_graph);
 
