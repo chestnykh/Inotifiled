@@ -2,43 +2,27 @@
 #include <handle_events.h>
 #include <sys/wait.h>
 #include <daemon.h>
-#include <add_watch.h>
+#include <re_read_config.h>
 #include <signotify.h>
 #include <core.h>
 
 
-#define MAIN_CHECK_RETVAL(ret) {\
-	if (ret == -1) return -1;\
-}
 
 
 int ret;
 extern int savepid();
 
 
-int track_files(void *nothing)
-{
-	set_sigusr1_handler();
-	print_starttime();
-	savepid();
-	fprintf(core_log, "here\n");
-	fflush(core_log);
-	for(;;){
-		ret = wait_events();
-		MAIN_CHECK_RETVAL(ret);
-		ret = handle_events();
-		MAIN_CHECK_RETVAL(ret);
-	}
-	return -1;
-}
 
 int main(int argc, char *argv[])
 {
-	home_dir = getenv("HOME");
-	if(!home_dir){
+	if(!(home_dir = getenv("HOME"))){
 		LOG_ERR();
 		REPORT_ERREXIT();
-		return -1;
+	}
+	if(!(cwd = getcwd(cwd, PATH_MAX))){
+		LOG_ERR();
+		REPORT_ERREXIT();
 	}
 	int flag = 0;
 	char *corelog;
@@ -79,22 +63,18 @@ int main(int argc, char *argv[])
 
 	init_pollfd_structures();
 
-	ret = create_log_streams();
+	ret = create_log_streams(0);
 	MAIN_CHECK_RETVAL(ret);
 
 	ret = init_event_struct();
 	MAIN_CHECK_RETVAL(ret);
 
-	//set_sigusr1_handler();
-
-	//track_files();
 	
 	start_daemon();
-	print_starttime();
+	print_createtime();
 	savepid();
-	fprintf(core_log, "here\n");
-	fflush(core_log);
 	set_sigusr1_handler();
+	set_kill_handler();
 	for(;;){
 		ret = wait_events();
 		MAIN_CHECK_RETVAL(ret);

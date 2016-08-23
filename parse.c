@@ -3,6 +3,14 @@
 #include <core.h>
 
 
+int readline(char *str, FILE *f)
+{
+	if(!fgets(str,LINE_MAX,f))
+		return -1;
+	str[strlen(str)-1] = '\0';
+	return 0;
+}
+
 
 int parse_config_file(const char *path)
 {
@@ -12,8 +20,13 @@ int parse_config_file(const char *path)
 		REPORT_ERREXIT();
 		return -1;
 	}
-
-	ntf = count_strings(conf)/3;
+	int strings = count_strings(conf);
+	if(strings % 3){
+		fprintf(core_log, "Error in config file!\n");
+		fflush(core_log);
+		return -1;
+	}
+	ntf = strings/3;
 	/*тут мы должны подготовить таблицу файл -> события*/
 	/*так как далее ее будем заполнять*/
 	int current_tf_struct = 0;
@@ -23,7 +36,7 @@ int parse_config_file(const char *path)
 	int not_graph = 0; /*separator counter*/
 	char *str = malloc(LINE_MAX);
 	int strings_in_conf = 0;
-	while(icurr != EOF){
+	while(!readline(str,conf)){
 		if(current_tf_struct > ntf){
 			fprintf(core_log, "Unable to parse config file \"%s\" correctly!\n", path);
 			return 1;
@@ -31,28 +44,18 @@ int parse_config_file(const char *path)
 		/*current string*/
 		pos = 0;
 		not_graph = 0;
-		/*получаем новую строку в str*/
-		while((icurr=fgetc(conf)) != 10 && icurr != EOF){
-			*str++ = (char)icurr;
-			if(++pos >= LINE_MAX-1){
-				break;
-			}
-			if(!isgraph(icurr)) not_graph++;
-		}
 		/*если строка пустая то дальше (и если строка это один символ \n) */
-		if(unused_string(pos,not_graph)) continue;
+		if(unused_string(str))
+			continue;
 		strings_in_conf ++;
-		str[pos]='\0';
 		/*на начало строки*/
-		str -= pos;
-		//printf("str = %s\n",str);	
 		/*на первый графический символ новой строки*/
 		to_next_valid_symbol(&str);
-		if(define_file_string(strings_in_conf) == 1){
+		if(define_string_type(strings_in_conf) == 1){
 			/*тут формируется (одна из стадий) таблица файл - события*/
 			handle_file_string(str, current_tf_struct);
 		}
-		else if(define_file_string(strings_in_conf) == 2){
+		else if(define_string_type(strings_in_conf) == 2){
 			handle_event_string(str, current_tf_struct);
 		}
 		else{
@@ -60,10 +63,8 @@ int parse_config_file(const char *path)
 			current_tf_struct++;
 
 		}
-		CLEAR_STR(str,pos);
 	}
 	fclose(conf);
-	//free(str);
 	return 0;
 }
 
@@ -78,7 +79,6 @@ int prepare_tf_structures()
 		REPORT_ERREXIT();
 		return -1;
 	}
-	//inotify_tracked_entry = tracked_files;
 	initialize_tracked_files_list();
 	return 0;
 }
@@ -104,12 +104,22 @@ void to_next_valid_symbol(char **str)
 }
 
 
-bool unused_string(int pos, int not_graph)
+
+bool unused_string(char *str)
 {
-	return (!pos || pos == not_graph);	
+	if(!str)
+		return true;
+	size_t len = strlen(str);
+	int not_graph = 0;
+	for(int i=0; i<len; i++)
+	{
+		if(!isgraph((int)(str[i]))) 
+			not_graph++;
+	}
+	return not_graph == len;
 }
 
-int define_file_string(int strcnt)
+int define_string_type(int strcnt)
 {
 	if(strcnt % 3 == 1) return 1;
 	if(strcnt % 3 == 2) return 2;
@@ -143,12 +153,6 @@ int handle_file_string(char *str, int curr_tf_struct)
 	
 	char *path = malloc(path_size);
 	/*подготовим в соответсвующей структуре место для пути*/
-	tracked_files[curr_tf_struct].path = malloc(path_size);
-	if(!tracked_files[curr_tf_struct].path){
-		LOG_ERR();
-		REPORT_ERREXIT();
-		return -1;
-	}
 
 	while(*str != '\0'){
 		*path = *str;
@@ -157,10 +161,17 @@ int handle_file_string(char *str, int curr_tf_struct)
 	}
 	*path = '\0';
 	path -= path_size;
-	if(strlen(tracked_files[curr_tf_struct].path) > PATH_MAX){
-		fprintf(stderr, "Too big path to file\n");
+	if(strlen(path) > PATH_MAX){
+		fprintf(core_log, "Too big path to file\n");
 		return -1;
 	}
+	tracked_files[curr_tf_struct].path = malloc(path_size);
+	if(!tracked_files[curr_tf_struct].path){
+		LOG_ERR();
+		REPORT_ERREXIT();
+		return -1;
+	}
+	printf("[ath = %s\n", path);
 	tracked_files[curr_tf_struct].path = path;
 	return 0;
 }
@@ -308,22 +319,16 @@ int count_strings(FILE *f){
 		fprintf(core_log, "Warning: continuous work of the programm might bi incorrect!\n");
 	}
 	while(!feof(f)){
-		if(fgets(str, LINE_MAX, f) && !empty(str)) strings++;
+		if(fgets(str, LINE_MAX, f) && !unused_string(str))
+			strings++;
 	}
 	/*возвращаем позицию в потоке в его */
 	if(fsetpos(f, &pos)){
 		LOG_ERR();
-		fprintf(core_log, "Warning: continuous work of the programm might bi incorrect!\n");
+		fprintf(core_log, "Warning: continuous work of the programm might be incorrect!\n");
 	}
 	return strings;
 }
 
-bool empty(char *str){
-	int nograph = 0;
-	for(size_t i=0; i<strlen(str); i++){
-		if(!isgraph(str[i])) nograph++;
-	}
-	return nograph == strlen(str);
-}
 
 

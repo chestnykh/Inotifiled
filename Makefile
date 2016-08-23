@@ -1,6 +1,6 @@
 CC = gcc
-CCFLAGS = -c -O2 -DLINUX -D_GNU_SOURCE -D_XOPEN_SOURCE -march=native -mtune=generic \
-	  -Wattributes -Wall -Wpedantic -Wextra -I include -Iruntime -ggdb3 # -std=c99
+CCFLAGS = -pipe -c -O2 -DLINUX -D_GNU_SOURCE -D_XOPEN_SOURCE -march=native -mtune=generic \
+	  -Wattributes -Wall -Wpedantic -Wextra -Iinclude -Iruntime -flto #-ggdb3 # -std=c99
 TARGET = ifiled
 
 OBJS += main.o \
@@ -12,38 +12,37 @@ OBJS += main.o \
 	runtime/signotify.o
 
 
-.PHONY: run clean test
+.PHONY: run clean test install read_config
 
 
 run: $(TARGET)
-	./$(TARGET) -c watching.conf -l ifiled.log;
+	./$(TARGET) -c $(shell pwd)/watching.conf -l $(shell pwd)/ifiled.log;
 
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $@
 
+
+.c.o: 
+	$(CC) $(CCFLAGS) $<
+
 main.o: main.c include/parse.h include/handle_events.h include/core.h
-	$(CC) $(CCFLAGS) $<
-
 parse.o: parse.c include/parse.h include/handle_events.h
-	$(CC) $(CCFLAGS) $<
-
 handle_events.o: handle_events.c include/handle_events.h include/parse.h include/core.h
-	$(CC) $(CCFLAGS) $<
-
 daemon.o: daemon.c include/daemon.h
-	$(CC) $(CCFLAGS) $<
-
 util.o: util.c include/util.h
-	$(CC) $(CCFLAGS) $<
+savepid.o: savepid.c
 
-runtime/runtime.o: runtime/add_watch.c include/add_watch.h
+runtime/runtime.o: runtime/re_read_config.c include/re_read_config.h
 	cd runtime; make; cd ../
+
 
 runtime/signotify.o: runtime/signotify.c include/signotify.h
 	$(CC) $(CCFLAGS) $< -o $@
 
-savepid.o: savepid.c
-	$(CC) $(CCFLAGS) $<
 
 clean:
-	rm -f $(OBJS) $(TARGET) *.log *.LOG
+	rm -f *.o $(TARGET) *.log *.LOG
+
+read_config: 
+	cd runtime && make $(RUNTIME_RE_READ) && cd ../ && \
+	objcopy runtime/ifiled_read_again ./$@

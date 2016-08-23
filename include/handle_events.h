@@ -90,7 +90,11 @@ int get_inotify_limits();
 void print_timeinfo(FILE *log);
 
 
-int create_log_streams();
+/*for runtime service*/
+
+#define NOTRUNCATE 0x00000001
+
+int create_log_streams(int flags);
 
 
 int init_inotify_actions();
@@ -104,7 +108,6 @@ int init_event_struct();
 
 int wait_events();
 
-//int handle_events(struct pollfd changed_file);
 int handle_events();
 
 

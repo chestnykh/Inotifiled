@@ -8,11 +8,6 @@
 
 int start_daemon()
 {
-	/*
-	Надо вызывать clone() с флагом наследования сигнал хэндлеров
-	int ret;
-	ret = clone(&track_files,);
-	*/
 	pid_t daemon_pid = fork();
 	if(daemon_pid == -1){
 		fprintf(core_log, "Failed to start daemon!\n");
@@ -51,10 +46,10 @@ int register_finish_procedures(){
 }
 
 
-void print_starttime()
+void print_createtime()
 {
 	for(int i=0; i<ntf; i++){
-		fprintf(tracked_files[i].log_stream, "Daemon started at:");
+		fprintf(tracked_files[i].log_stream, "This logfile created at:");
 		print_timeinfo(tracked_files[i].log_stream);
 		fprintf(tracked_files[i].log_stream, "\n");
 		fflush(tracked_files[i].log_stream);
@@ -64,7 +59,7 @@ void print_starttime()
 void print_finishtime()
 {
 	for(int i=0; i<ntf; i++){
-		fprintf(tracked_files[i].log_stream, "\nDaemon finished at:");
+		fprintf(tracked_files[i].log_stream, "Daemon finished at:");
 		print_timeinfo(tracked_files[i].log_stream);
 		fflush(tracked_files[i].log_stream);
 	}

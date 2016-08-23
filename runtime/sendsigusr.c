@@ -9,22 +9,18 @@
 
 int main(int argc, char *argv)
 {
-	//char *dir = getenv("HOME");
-	// = strcat(home,"/.ifiled.pid");
 	char *pid_file_name = strcat(getenv("HOME"), "/.ifiled.pid");
 	FILE *pidfile = fopen(pid_file_name, "r");
-	if(!pidfile) puts("!!");
+	if(!pidfile){
+		fprintf(stderr, "$HOME/.ifiled.pid: no such file\n");
+		return -1;
+	}
 	char pid_str[5];
        	fgets(pid_str, 6, pidfile);
-	for(size_t i=0; i<5; i++){
-		if(!isdigit(pid_str[i])) pid_str[i] = '\0';
+	pid_t daemon_pid = atoi(pid_str);
+	if(kill(daemon_pid, SIGUSR1) == -1){
+		perror("kill");
 	}
-	printf("pidstr = %s\n", pid_str);
-	pid_t pid = atoi(pid_str);
-	printf("pid = %d\n", pid);
-	int _kill = kill(pid,SIGUSR1);
-	if(_kill == -1 ){
-		puts("!!");
-	}
+	
 	return 0;
 }

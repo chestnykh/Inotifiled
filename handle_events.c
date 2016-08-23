@@ -1,5 +1,6 @@
 #include <handle_events.h>
 #include <parse.h>
+#include <core.h>
 
 
 void print_timeinfo(FILE *log)
@@ -120,6 +121,9 @@ int init_inotify_actions()
 void init_pollfd_structures()
 {
 	fds = calloc(ntf, sizeof(struct pollfd));
+	if(!fds)
+		return;
+
 	for(int i=0; i<ntf; i++){
 		fds[i].fd = inotify_fds[i];
 		fds[i].events = POLLIN;
@@ -130,21 +134,21 @@ void init_pollfd_structures()
 
 
 
-int create_log_streams()
+int create_log_streams(int flags)
 {
 	int fd;
 	for(size_t i=0; i<ntf; i++){
-		fd = open(tracked_files[i].logfile, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+		if(flags & NOTRUNCATE)
+			fd = open(tracked_files[i].logfile, O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+		else	fd = open(tracked_files[i].logfile, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 		if(fd == -1){
 			LOG_ERR();
 			REPORT_ERREXIT();
-			return -1;
 		}
 		tracked_files[i].log_stream = fdopen(fd, "a+");
 		if(!tracked_files[i].log_stream){
 			LOG_ERR();
 			REPORT_ERREXIT();
-			return -1;
 		}
 	}
 	return 0;
@@ -169,10 +173,7 @@ int wait_events()
 	int pollret;
 	do {
 		pollret = poll(fds, (nfds_t)ntf, -1);
-		//if(errno == EINTR) puts("EINTR!!!");
 	} while (pollret == -1 && errno == EINTR);
-	fprintf(core_log, "pollret = %d\n", pollret);
-	fflush(core_log);
 	if(pollret == -1){
 		LOG_ERR();
 		REPORT_ERREXIT();

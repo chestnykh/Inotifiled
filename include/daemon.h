@@ -5,7 +5,7 @@
 
 int start_daemon();
 
-void print_starttime();
+void print_createtime();
 void print_finishtime();
 
 int register_finish_procedures();

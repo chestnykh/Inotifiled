@@ -23,6 +23,7 @@ int savepid()
 	}
 	fprintf(pidfile, "%d", getpid());
 	fflush(pidfile);
-	if(fclose(pidfile)) LOG_ERR();
+	if(fclose(pidfile))
+		LOG_ERR();
 	return 0;
 }

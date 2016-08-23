@@ -9,8 +9,10 @@
 //struct sigaction action;
 
 
-int set_sigusr1_handler();
+void set_sigusr1_handler();
 
 /*Реакция на sigusr1 будет перечитывание конфигурационного файла*/
 
 void sigusr1_handler(int signum, siginfo_t *sinfo, void *ucontext);
+
+void set_kill_handler();

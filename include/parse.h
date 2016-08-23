@@ -35,6 +35,7 @@
 #define REPORT_ERREXIT() { \
 	fprintf(core_log, "Program exited due to error\n"); \
 	fflush(core_log); \
+	exit(1); \
 } 
 
 #endif
@@ -68,15 +69,19 @@ void initialize_tracked_files_list();
 }
 #endif
 
+int readline(char *str, FILE *f);
+
 int parse_config_file(const char *path);
 
 bool compare_strings(char *s1, char *s2, size_t len);
 
 void to_next_valid_symbol(char **str);
 
-bool unused_string(int pos, int not_graph);
+bool unused_string(char *str);
 
-int define_file_string(int strcnt);
+int define_string_type(int strcnt);
+
+
 
 
 int handle_file_string(char *str, int curr_tf_struct/*some args*/);
@@ -87,6 +92,14 @@ int handle_log_string(char *str, int curr_tf_struct/*some args*/);
 
 int count_strings(FILE *f);
 
-bool empty(char *str);
+
+
+
+#define CHECK_RETVAL(ret) {\
+	if (ret) \
+		return -1;\
+}
+
+#define MAIN_CHECK_RETVAL CHECK_RETVAL
 
 
