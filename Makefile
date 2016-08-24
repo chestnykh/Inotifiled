@@ -43,5 +43,5 @@ $(DAEMON_MANAGEMENT): sendsig.c
 
 
 clean:
-	rm -f *.o $(TARGET) *.log *.LOG
+	rm -f *.o $(TARGET) *.log *.LOG $(DAEMON_MANAGEMENT)
 
