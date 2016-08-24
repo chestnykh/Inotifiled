@@ -2,14 +2,13 @@
 #include <handle_events.h>
 #include <sys/wait.h>
 #include <daemon.h>
-#include <re_read_config.h>
+#include <runtime_read_config.h>
 #include <signotify.h>
 #include <core.h>
 
 
 
 
-int ret;
 extern int savepid();
 
 
@@ -52,6 +51,9 @@ int main(int argc, char *argv[])
 		LOG_ERR();
 		return -1;
 	}
+
+	int ret;
+
 	ret = parse_config_file((const char *)config_file);
 	MAIN_CHECK_RETVAL(ret);
 
@@ -74,15 +76,13 @@ int main(int argc, char *argv[])
 	print_createtime();
 	savepid();
 	set_sigusr1_handler();
-	set_kill_handler();
+	set_sigusr2_handler();
 	for(;;){
 		ret = wait_events();
 		MAIN_CHECK_RETVAL(ret);
 		ret = handle_events();
 		MAIN_CHECK_RETVAL(ret);
 	}
-	
-	/*сюда дойти не должно*/
 	return 0;
 }
 

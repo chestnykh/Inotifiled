@@ -171,7 +171,6 @@ int handle_file_string(char *str, int curr_tf_struct)
 		REPORT_ERREXIT();
 		return -1;
 	}
-	printf("[ath = %s\n", path);
 	tracked_files[curr_tf_struct].path = path;
 	return 0;
 }
@@ -267,7 +266,6 @@ int handle_event_string(char *str, int curr_tf_struct)
 		CLEAR_STR(event,ch);
 		str++;	
 	}
-	printf("events = %d\n", tracked_files[curr_tf_struct].events);
 	return 0;
 }
 

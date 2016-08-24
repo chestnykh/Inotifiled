@@ -1,18 +1,21 @@
 CC = gcc
 CCFLAGS = -pipe -c -O2 -DLINUX -D_GNU_SOURCE -D_XOPEN_SOURCE -march=native -mtune=generic \
 	  -Wattributes -Wall -Wpedantic -Wextra -Iinclude -Iruntime -flto #-ggdb3 # -std=c99
+
 TARGET = ifiled
+DAEMON_MANAGEMENT=daemon_manage
+
 
 OBJS += main.o \
    	parse.o \
    	handle_events.o \
 	daemon.o \
 	savepid.o \
-	runtime/runtime.o \
-	runtime/signotify.o
+	runtime_read_config.o \
+	signotify.o
 
 
-.PHONY: run clean test install read_config
+.PHONY: run clean test install
 
 
 run: $(TARGET)
@@ -31,18 +34,14 @@ handle_events.o: handle_events.c include/handle_events.h include/parse.h include
 daemon.o: daemon.c include/daemon.h
 util.o: util.c include/util.h
 savepid.o: savepid.c
+runtime_read_config.o: runtime_read_config.c include/runtime_read_config.h
+signotify.o: signotify.c include/signotify.h
 
-runtime/runtime.o: runtime/re_read_config.c include/re_read_config.h
-	cd runtime; make; cd ../
-
-
-runtime/signotify.o: runtime/signotify.c include/signotify.h
-	$(CC) $(CCFLAGS) $< -o $@
+$(DAEMON_MANAGEMENT): sendsig.c
+	$(CC) $(CCFLAGS) $< && \
+	$(CC) sendsig.o -o $@
 
 
 clean:
 	rm -f *.o $(TARGET) *.log *.LOG
 
-read_config: 
-	cd runtime && make $(RUNTIME_RE_READ) && cd ../ && \
-	objcopy runtime/ifiled_read_again ./$@
