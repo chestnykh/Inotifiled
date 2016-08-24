@@ -93,14 +93,14 @@ int init_inotify_actions()
 		REPORT_ERREXIT();
 		return -1;
 	}
-	inotify_wds = calloc(ntf, sizeof(uint32_t));
+	inotify_wds = calloc(ntf, sizeof(int));
 	if(!inotify_wds){
 		LOG_ERR();
 		REPORT_ERREXIT();
 		return -1;
 	}
 	
-	for(size_t i=0; i<ntf; i++){
+	for(unsigned int i=0; i<ntf; i++){
 		inotify_fds[i] = inotify_init1(0);
 		if(inotify_fds[i] == -1){
 			LOG_ERR();
@@ -124,7 +124,7 @@ void init_pollfd_structures()
 	if(!fds)
 		return;
 
-	for(int i=0; i<ntf; i++){
+	for(unsigned int i=0; i<ntf; i++){
 		fds[i].fd = inotify_fds[i];
 		fds[i].events = POLLIN;
 	}
@@ -184,7 +184,7 @@ int wait_events()
 
 int handle_events()
 {
-	size_t i;
+	ssize_t i;
 	ssize_t rread;
 	char buf[BUFSIZE]__attribute__((aligned(__alignof__(struct inotify_event))));
 	//memset(buf, 0, BUFSIZE);

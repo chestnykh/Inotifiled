@@ -29,11 +29,8 @@ int parse_config_file(const char *path)
 	ntf = strings/3;
 	/*тут мы должны подготовить таблицу файл -> события*/
 	/*так как далее ее будем заполнять*/
-	int current_tf_struct = 0;
+	unsigned int current_tf_struct = 0;
 	prepare_tf_structures();
-	int icurr = 1; /*current symbol*/
-	int pos = 0; /*string position*/
-	int not_graph = 0; /*separator counter*/
 	char *str = malloc(LINE_MAX);
 	int strings_in_conf = 0;
 	while(!readline(str,conf)){
@@ -42,8 +39,6 @@ int parse_config_file(const char *path)
 			return 1;
 		}
 		/*current string*/
-		pos = 0;
-		not_graph = 0;
 		/*если строка пустая то дальше (и если строка это один символ \n) */
 		if(unused_string(str))
 			continue;
@@ -110,9 +105,8 @@ bool unused_string(char *str)
 	if(!str)
 		return true;
 	size_t len = strlen(str);
-	int not_graph = 0;
-	for(int i=0; i<len; i++)
-	{
+	unsigned int not_graph = 0;
+	for(size_t i=0; i<len; i++){
 		if(!isgraph((int)(str[i]))) 
 			not_graph++;
 	}

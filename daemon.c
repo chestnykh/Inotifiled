@@ -48,7 +48,7 @@ int register_finish_procedures(){
 
 void print_createtime()
 {
-	for(int i=0; i<ntf; i++){
+	for(unsigned int i=0; i<ntf; i++){
 		fprintf(tracked_files[i].log_stream, "This logfile created at:");
 		print_timeinfo(tracked_files[i].log_stream);
 		fprintf(tracked_files[i].log_stream, "\n");
@@ -58,7 +58,7 @@ void print_createtime()
 
 void print_finishtime()
 {
-	for(int i=0; i<ntf; i++){
+	for(unsigned int i=0; i<ntf; i++){
 		fprintf(tracked_files[i].log_stream, "Daemon finished at:");
 		print_timeinfo(tracked_files[i].log_stream);
 		fflush(tracked_files[i].log_stream);

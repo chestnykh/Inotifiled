@@ -77,7 +77,7 @@ uint inotify_max_inst;
 uint inotify_max_watches;
 
 int *inotify_fds;
-uint32_t *inotify_wds;
+int *inotify_wds;
 
 
 struct pollfd *fds;
