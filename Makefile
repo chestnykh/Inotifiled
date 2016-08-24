@@ -1,5 +1,5 @@
 CC = gcc
-CCFLAGS = -pipe -c -O2 -DLINUX -D_GNU_SOURCE=600 -D_XOPEN_SOURCE=600 -march=native -mtune=generic \
+CCFLAGS = -pipe -c -O2 -DLINUX -D_GNU_SOURCE -D_XOPEN_SOURCE=500 -march=native -mtune=generic \
 	  -Wattributes -Wall -Wpedantic -Wextra -Wno-unused-parameter -Iinclude -Iruntime -flto #-ggdb3 # -std=c99
 
 TARGET = ifiled
