@@ -72,11 +72,17 @@ int main(int argc, char *argv[])
 	MAIN_CHECK_RETVAL(ret);
 
 	
-	start_daemon();
+	ret = start_daemon();
+	MAIN_CHECK_RETVAL(ret);
+
 	print_createtime();
-	savepid();
+
+	ret = savepid();
+	MAIN_CHECK_RETVAL(ret);
+
 	set_sigusr1_handler();
 	set_sigusr2_handler();
+
 	for(;;){
 		ret = wait_events();
 		MAIN_CHECK_RETVAL(ret);

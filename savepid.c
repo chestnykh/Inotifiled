@@ -9,6 +9,10 @@ extern char *home_dir;
 
 int savepid()
 {
+	if(!home_dir){
+		fprintf(core_log, "Failed to get home directory!\n");
+		REPORT_ERREXIT();	
+	}
 	char *path_to_pidfile;
 	path_to_pidfile =  strcat(home_dir,"/.ifiled.pid");
 	int ifiled_pid = open(path_to_pidfile, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);

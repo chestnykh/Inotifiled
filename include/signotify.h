@@ -15,4 +15,6 @@ void set_sigusr1_handler();
 
 void sigusr1_handler(int signum, siginfo_t *sinfo, void *ucontext);
 
+void sigusr2_handler(int sig);
+
 void set_sigusr2_handler();
